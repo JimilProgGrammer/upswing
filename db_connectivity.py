@@ -11,5 +11,5 @@ class MongoCon(object):
     def get_connection(cls):
         if cls.__db is None or cls.__conn is None:
             cls.__conn = MongoClient(cls.db_uri)
-            cls.__db = cls.__conn.arjun
+            cls.__db = cls.__conn.upswing
         return cls.__db

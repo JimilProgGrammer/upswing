@@ -4,7 +4,6 @@ from content_fetch_engine import udemy, coursera, edx, youtube
 # [---------------------------------------END IMPORTING FILES-----------------------------------------]
 
 # [------------------------------------START IMPORTING LIBRARIES--------------------------------------]
-from googletrans import Translator
 import logging as logger
 import urllib.request
 import urllib.parse
@@ -47,40 +46,6 @@ scheduler.start()
 
 #jwt = JWTManager(app)
 
-# [------------------------------------START CHATBOT FUNCTIONS----------------------------------------]
-def detect_intent_texts(project_id, session_id, texts, language_code):
-    """Returns the result of detect intent with texts as inputs.
-    Using the same `session_id` between requests allows continuation
-    of the conversaion."""
-    session_client = dialogflow.SessionsClient()
-
-    session = session_client.session_path(project_id, session_id)
-    f = open("SessionPath.txt","a+")
-    f.write("Session Path :: {}\n".format(session))
-    f.close
-    for text in texts:
-        text_input = dialogflow.types.TextInput(text=text, language_code=language_code)
-        query_input = dialogflow.types.QueryInput(text=text_input)
-        response = session_client.detect_intent(session=session, query_input=query_input)
-
-        return response.query_result.fulfillment_text
-
-def Neel_Bot(botName,sessionID,question):
-    #Converting to english
-    translator = Translator(service_urls=['translate.google.com'])
-    convertedPlaintext = translator.translate([question], dest='en')
-    answer=detect_intent_texts(botName, sessionID, [convertedPlaintext[0].text], u"0")
-    return answer
-
-def getAnswer(question,UserId):
-    chatbot_name = "ArjunBot"
-    project_id = "web-search-cd9e4"
-    UserQuestion = question.replace('+',' ')
-    sessionID = UserId
-    answer = Neel_Bot(project_id, sessionID, UserQuestion)
-    return answer
-# [---------------------------------------END CHATBOT FUNCTIONS---------------------------------------]
-
 # [------------------------------------START SEND EMAIL-----------------------------------------------]
 def send_email(user, pwd, recipient, subject, body):
     FROM = user
@@ -93,11 +58,13 @@ def send_email(user, pwd, recipient, subject, body):
     """ % (FROM, ", ".join(TO), SUBJECT, TEXT)
     try:
         server = smtplib.SMTP("smtp.gmail.com", 587)
+        print("Mail send initated.")
         server.ehlo()
         server.starttls()
         server.login(user, pwd)
         server.sendmail(FROM, TO, message)
         server.close()
+        print("Mail send complete")
         logger.debug('successfully sent the mail')
         return "1"
     except Exception as e: 
@@ -108,18 +75,18 @@ def SendOTPOverEmail(email):
 	try:
 		otp = str(r.randint(10000, 99999))
 		#manandoshi1607@gmail.com
-		subject = "Email Verification | A.R.J.U.N"
+		subject = "Email Verification | Upswing"
 		body = """
 	    		Hi,
 
-	    		Thanks for creating a new account on A.R.J.U.N, and welcome :)
+	    		Thanks for creating a new account on Upswing, and welcome :)
 
 	    		The final step to create your account is to verify your email address. 
 	    		Your OTP is : """+otp+"""</b>
 	    		Once that's done, you're all set.
 
 	    		Regards,
-	    		Tech Militia
+	    		fsociety
 	    		"""
 		emailRes = send_email("ayreonvendor1@gmail.com", "ayreonvendor123",email, subject, body)
 		if(emailRes==1):
@@ -411,28 +378,27 @@ def retcourse():
 def sign_up():
     form={}
     form['name']=request.args.get("name")
-    form['username']=request.args.get("username")
-    form['phone']=request.args.get("phone")
+    form['email_id']=request.args.get("email_id")
     form['password']=request.args.get("password")
-    form['country']=request.args.get("country")
-    form['state']=request.args.get("state")
-    form['city']=request.args.get("city")
+    
     print(form)
     print(type(form))
     #return(jsonify(form))
-    un=form['username']
+    un=form['email_id']
     ob=repo.OhlcRepo()
-    user = ob.find_record_with_limit(collection_name="users", query={"username":str(un)}, limit=1)
+    user = ob.find_record_with_limit(collection_name="users", query={"email_id":str(un)}, limit=1)
     print(user)
     if not user:
         """ Successful signup """
         """ OTP Verification for email """
         """ """
-        o=SendOTPOverEmail(form['username'])
-        form['email_otp']=o
-        form['email_verified']=False
-        form['searched_keywords'] = []
-        form['balance'] = 100.0
+        o=SendOTPOverEmail(form['email_id'])
+        form['otp']=o
+        form['is_otp_verified']=False
+        form['live_challenges'] = []
+        form['completed_challenges'] = []
+        form['balance'] = 500000.0
+        form['equity_value'] = 0
         ob.insert_new_record(collection_name="users", insert_doc=form)
         return(jsonify({'data':'Success','error':None}))
     else:
