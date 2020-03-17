@@ -1,0 +1,61 @@
+<app-navbar>
+
+</app-navbar>
+<div class="container-fluid" style="background:#5f38e2; background:linear-gradient(to right,#5f38e2,#5f38e2);height:100%;">
+  <br/>
+  <div class="card shadow p-3 mb-5 bg-white rounded" style="margin-top: auto;">
+    <!-- START ROW 1 -->
+    <div class="row">
+      <div class="col-md-4">
+        <h3><b>My Portfolio</b></h3>
+        <p>Available Balance:</p>
+        <h5><b>{{balance}}</b></h5>
+        <p>Portfolio Net Gain:</p>
+        <h5><b>{{portfolio_gain}}</b></h5>
+      </div>
+      <div class="col-md-8">
+        <div class="chart">
+          <canvas baseChart *ngIf="pieChartData"
+            [data]="pieChartData"
+            [labels]="pieChartLabels"
+            [chartType]="pieChartType"
+            [options]="pieChartOptions"
+            [plugins]="pieChartPlugins"
+            [colors]="pieChartColors"
+            [legend]="pieChartLegend" style="width: 300px; height: 250px;">
+          </canvas>
+        </div>
+      </div>
+    </div>
+    <!-- END ROW 1 -->
+    <br/>
+    <!-- START ROW 2 -->
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table table-hover">
+          <thead style="background-color: #5f38e2; color: white;">
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Symbol</th>
+              <th scope="col">Price</th>
+              <th scope="col">Quantity</th>
+              <th scope="col">Net Gain</th>
+              <th scope="col">Percent Gain</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let stock of current_holdings; let i = index">
+              <th scope="row">{{i+1}}</th>
+              <td>{{stock['symbol']}}</td>
+              <td>{{stock['price']}}</td>
+              <td>{{stock['quantity']}}</td>
+              <td>{{stock['net_gain']}}</td>
+              <td>{{stock['percent_gain']}}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- END ROW 2 -->
+  </div>
+</div>

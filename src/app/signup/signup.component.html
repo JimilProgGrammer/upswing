@@ -1,0 +1,65 @@
+<div class="container-fluid" style="background-color: #5f38e2">
+  <div class="row">
+    <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
+      <div class="card card-signin my-5">
+        <div class="card-body">
+        <h5 class="card-title text-center">Sign Up</h5>
+        <form class="form-signin" method="POST" enctype="application/x-www-form-urlencoded" ngNativeValidate>
+          <div class="form-label-group">
+            <label for="name">Name:</label>
+            <input type="text" id="name" class="form-control" placeholder="Your Name" name="name" [(ngModel)]="name" required autofocus>
+          </div>
+          <br/>
+          <div class="form-label-group">
+            <label for="email">Email ID: </label>
+            <input type="email" id="username" class="form-control" placeholder="Your Email Address" name="email_id" [(ngModel)]="email_id" required>
+          </div>
+          <br/>
+          <div class="form-label-group">
+            <label for="pwd">Password: </label>
+            <input type="password" name="password" [(ngModel)]="password" class="form-control" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters" required="required"/>
+          </div>
+          <br/>
+          <button class="btn btn-lg custom-btn btn-block text-uppercase" type="submit" (click)="doSignUp()">Sign Up</button>
+          <p style="text-align: center; color: red;" *ngIf="errorMsg">
+            {{errorMsg}}
+          </p>
+          <hr class="my-4">
+            <p style="text-align: center;">Already have an account? 
+              <a routerLink="/login" style="color: #5f38e2;">Sign In!</a>
+            </p>
+        </form>
+        </div>
+      </div>
+      <br/><br/><br/><br/><br/><br/><br/><br/>
+    </div>
+  </div>
+</div>
+
+<button id="verifyOtp" type="button" class="btn btn-primary" data-toggle="modal" data-target="#verifyOtpModal" hidden>
+</button>
+
+<!-- OTP Verify Modal -->
+<div class="modal fade" id="verifyOtpModal" tabindex="-1" role="dialog" aria-labelledby="verifyOtpModalLabel" aria-hidden="true" style="color: black;">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Verify Your Email</h5>
+      </div>
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <p>Please enter the OTP sent to you on the registered email, to verify your account.</p>
+        <div class="form-label-group">
+          <label for="otp">OTP: </label>
+          <input type="text" name="otp" [(ngModel)]="otp" class="form-control" required="required"/>
+        </div>
+      </div>
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button id="dismissModal" type="button" class="btn btn-secondary" data-dismiss="modal" hidden>Close</button>
+        <button type="submit" class="btn btn-primary" (click)="verifyOtp()" style="color: black;">Verify OTP</button>
+      </div>
+    </div>
+  </div>
+</div>

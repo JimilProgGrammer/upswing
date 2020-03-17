@@ -1,0 +1,107 @@
+<app-navbar>
+  
+</app-navbar>
+<div class="container-fluid" style="background:#5f38e2; background:linear-gradient(to right,#5f38e2,#5f38e2);height:100%;">
+  <br/>
+  <br/>
+  <div class="card shadow p-3 mb-5 bg-white rounded" style="margin-top: auto;">
+    <!-- ROW 1: Title Row -->
+    <div class="row">
+      <div class="col-md-12 col-sm-12">
+        <h2 style="text-align: center;">Stocks Universe</h2>
+      </div>
+      <span *ngIf="errorMsg" style="color:red"><strong>{{errorMsg}}</strong></span>
+    </div>
+    <!-- END ROW 1 -->
+    <!-- ROW 2: Balance Card -->
+    <div class="row">
+      <div class="col-md-3">
+        <br/>
+      </div>
+      <div class="col-md-6">
+        <div class="card shadow-lg p-3 rounded" style="border: 1px solid #5f38e2; background-color: blueviolet; padding: 0px;">
+          <div class="card-body text-white">
+              <h5 class="card-title">Available Balance: </h5>
+              <p class="display-4" style="text-align: center;"><img src="../../assets/images/coins.png" width="100" height="100"/><b>{{balance}}</b></p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+
+      </div>
+    </div>
+    <!-- END ROW 2 -->
+    <br/>
+    <!-- START ROW 3 -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="alert alert-success" role="alert" *ngIf="successMsg">
+          {{successMsg}}
+        </div>
+        <div class="alert alert-danger" role="alert" *ngIf="errorMsg">
+          {{errorMsg}}
+        </div>
+        <table class="table table-hover">
+          <thead style="background-color: #5f38e2; color: white;">
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Symbol</th>
+              <th scope="col">Price</th>
+              <th scope="col">Quantity</th>
+              <th scope="col"> </th>
+              <th scope="col"> </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let stock of stocks; let i = index">
+              <th scope="row">{{i+1}}</th>
+              <td><a style="text-decoration: none; cursor: pointer;" (click)="openModal(stock['stock_name'])">{{stock['stock_name']}}</a></td>
+              <td>{{stock['close']}}</td>
+              <td><input type="text" class="form-control" placeholder="Quantity" name="stock['quantity']" [(ngModel)]="stock['quantity']"></td>
+              <td>
+                <button class="btn btn-primary" (click)="performBuy(stock['stock_name'],stock['close'],stock['quantity'])" style="background-color: #5f38e2; border-color: #5f38e2">Buy</button>
+              </td>
+              <td>
+                <button class="btn btn-primary" (click)="performSell(stock['stock_name'],stock['close'],stock['quantity'])" style="background-color: #5f38e2; border-color: #5f38e2">Sell</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- END ROW 3 -->
+  </div>
+</div>
+
+<button #openModalButton class="btn btn-primary openModalButton" id="openModalButton" [hidden]="true" data-toggle="modal" data-target="#stockModal">
+  Open Modal
+</button>
+
+<div class="modal fade" id="stockModal" tabindex="-1" role="dialog" aria-labelledby="stockModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document" style="min-width: 700px;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="stockModalLabel">{{selectedStock}} History</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-4 col-xs-12">
+            <p>{{selectedDescription}}</p>
+          </div>
+          <div class="col-md-8 col-xs-12">
+            <div class="chart">
+                
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
