@@ -588,6 +588,42 @@ def sell_stocks():
   else:
     return create_json({"data": None, "error": "Username passed is invalid."})
 
+@app.route("/get_current_standings", methods=["GET"])
+def get_current_standings():
+  try:
+    ob = repo.OhlcRepo()
+    users = ob.find_record_with_projection(collection_name="users", query={}, projection={"_id": 0})
+    json_response = []
+    for user in users:
+      print(user)
+      portfolio = ob.find_records_with_query(collection_name="portfolio", query={"email_id": user['email_id'], "is_live": True})
+      stocks_visited = []
+      portfolio_net_gain = 0
+      for trade in portfolio:
+        symbol = trade['stock_name']
+        if symbol not in stocks_visited:
+          stocks_visited.append(symbol)
+          symbol_trades = [d for d in portfolio if d['stock_name'] == symbol]
+          symbol_trades.sort(key=operator.itemgetter('timestamp'))
+          original = 0
+          quantity = 0
+          print(symbol, symbol_trades)
+          if len(symbol_trades) == 1:
+            original = float(symbol_trades[0]['price'])
+            quantity = float(symbol_trades[0]['quantity'])
+          else:
+            original = float(symbol_trades[-1]['price'])
+            quantity = float(symbol_trades[-1]['quantity'])
+          latest_close = ob.find_records_with_limit(collection_name=symbol, limit=1)[0]['close']
+          portfolio_net_gain = portfolio_net_gain + (latest_close - original)
+
+      json_response.append({"username": user['email_id'], "name": user['name'], "portfolio_gain": portfolio_net_gain})
+    json_response = sorted(json_response, key = lambda i: (i['portfolio_gain'], i['name']), reverse=True) 
+    return create_json({"data": json_response, "error": None})
+  except Exception as e:
+    print(e)
+    return create_json({"Error": e})
+
 @app.route("/initial_data_load", methods=["GET"])
 def daily_data_load():
   try:
