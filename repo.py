@@ -146,7 +146,7 @@ class OhlcRepo(object):
 
     def update_query(self, collection_name, query_doc, insert_doc):
         self.db_inst = self.db_cli[collection_name]
-        self.db_inst.update_one(query_doc, {'$set': insert_doc})
+        self.db_inst.update_one(query_doc, {'$set': insert_doc}, upsert=True)
 
 
 '''

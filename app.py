@@ -430,43 +430,53 @@ def daily_data_load():
 
 @app.route("/daily_data_load")
 def daily_data_load_endpoint():
-  ob = repo.OhlcRepo()
-  stocks = ob.find_record_with_projection(collection_name="stocks", query={}, projection={"_id": 0, "stock_name": 1})
+  try:
+    ob = repo.OhlcRepo()
+    stocks = ob.find_record_with_projection(collection_name="stocks", query={}, projection={"_id": 0, "stock_name": 1})
 
-  start_date = datetime.date.today() - datetime.timedelta(days=252)
-  start_date = start_date.strftime("%Y-%m-%d")
+    start_date = datetime.date.today() - datetime.timedelta(days=7)
+    start_date = start_date.strftime("%Y-%m-%d")
 
-  for doc in stocks:
-    symbol = doc['stock_name']
-    print("INSERTING: " + symbol)
-    data = yahoo_finance(symbol, start_date)
-    data = data.to_dict("records")
-    for record in data:
-      query_doc = {"timestamp": record["timestamp"]}
-      insert_doc = record
-      ob.update_query(collection_name=symbol, query_doc=query_doc, insert_doc=insert_doc)
-    print(record['timestamp'])
-    print("DONE INSERTING: " + symbol)
+    for doc in stocks:
+      symbol = doc['stock_name']
+      print("INSERTING: " + symbol)
+      data = yahoo_finance(symbol, start_date)
+      data = data.to_dict("records")
+      for record in data:
+        query_doc = {"timestamp": record["timestamp"]}
+        insert_doc = record
+        ob.update_query(collection_name=symbol, query_doc=query_doc, insert_doc=insert_doc)
+      print(record['timestamp'])
+      print("DONE INSERTING: " + symbol)
+    return create_json({"data": "Success"})
+  except Exception as e:
+    print(e)
+    return create_json({"Error": e})
 
 
 @scheduler.task('cron', hour=8)
 def daily_data_load():
-  ob = repo.OhlcRepo()
-  stocks = ob.find_record_with_projection(collection_name="stocks", query={}, projection={"_id": 0, "stock_name": 1})
+  try:
+    ob = repo.OhlcRepo()
+    stocks = ob.find_record_with_projection(collection_name="stocks", query={}, projection={"_id": 0, "stock_name": 1})
 
-  start_date = datetime.date.today() - datetime.timedelta(days=7)
-  start_date = start_date.strftime("%Y-%m-%d")
+    start_date = datetime.date.today() - datetime.timedelta(days=7)
+    start_date = start_date.strftime("%Y-%m-%d")
 
-  for doc in stocks:
-    symbol = doc['stock_name']
-    print("INSERTING: " + symbol)
-    data = yahoo_finance(symbol, start_date)
-    data = data.to_dict("records")
-    for record in data:
-      query_doc = {"timestamp": record["timestamp"]}
-      insert_doc = record
-      ob.update_query(collection_name=symbol, query_doc=query_doc, insert_doc=insert_doc)
-    print("DONE INSERTING: " + symbol)
+    for doc in stocks:
+      symbol = doc['stock_name']
+      print("INSERTING: " + symbol)
+      data = yahoo_finance(symbol, start_date)
+      data = data.to_dict("records")
+      for record in data:
+        query_doc = {"timestamp": record["timestamp"]}
+        insert_doc = record
+        ob.update_query(collection_name=symbol, query_doc=query_doc, insert_doc=insert_doc)
+      print("DONE INSERTING: " + symbol)
+    return create_json({"data": "Success"})
+  except Exception as e:
+    print(e)
+    return create_json({"Error": e})
 
 
 if __name__ == '__main__':
