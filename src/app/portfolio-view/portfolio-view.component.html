@@ -6,23 +6,91 @@
   <div class="card shadow p-3 mb-5 bg-white rounded" style="margin-top: auto;">
     <!-- START ROW 1 -->
     <div class="row">
-      <div class="col-md-4">
-        <h3><b>My Portfolio</b></h3>
+      <div class="col-md-5">
+        <h3 style="text-align: center;"><b>My Portfolio</b></h3>
         <p>Available Balance:</p>
         <h5><b>{{balance}}</b></h5>
         <p>Portfolio Net Gain:</p>
-        <h5><b>{{portfolio_gain}}</b></h5>
+        <h5><b>{{portfolio_gain}}</b></h5><br/>
+
+        <h4><b>Daily Motivation: </b></h4>
+        
+        <!-- Bootstrap carousel-->
+        <div class="carousel slide" id="carouselExampleIndicators" data-ride="carousel">
+          <!-- Bootstrap carousel indicators [nav] -->
+          <ol class="carousel-indicators mb-0">
+              <li class="active" data-target="#carouselExampleIndicators" data-slide-to="0"></li>
+              <li data-target="#carouselExampleIndicators" data-slide-to="1"></li>
+              <li data-target="#carouselExampleIndicators" data-slide-to="2"></li>
+          </ol>
+
+          <!-- Bootstrap inner [slides]-->
+          <div class="carousel-inner px-5 pb-4">
+              <!-- Carousel slide-->
+              <div class="carousel-item active">
+                  <div class="media"><img class="rounded-circle img-thumbnail" src="https://res.cloudinary.com/mhmd/image/upload/v1579676165/avatar-1_ffutqr.jpg" alt="" width="75">
+                      <div class="media-body ml-3">
+                          <blockquote class="blockquote border-0 p-0">
+                              <p class="font-italic lead"> <i class="fa fa-quote-left mr-3 text-success"></i>
+                                How many millionaires do you know who have become wealthy by investing in savings accounts? I rest my case.
+                              </p>
+                              <footer class="blockquote-footer">Robert G. Allen</footer>
+                          </blockquote>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- Carousel slide-->
+              <div class="carousel-item">
+                  <div class="media"><img class="rounded-circle img-thumbnail" src="https://res.cloudinary.com/mhmd/image/upload/v1579676165/avatar-3_hdxocq.jpg" alt="" width="75">
+                      <div class="media-body ml-3">
+                          <blockquote class="blockquote border-0 p-0">
+                              <p class="font-italic lead"> <i class="fa fa-quote-left mr-3 text-success"></i>
+                                Financial peace isn't the acquisition of stuff. It's learning to live on less than you make, so you can give money back and have money to invest. You can't win until you do this.
+                              </p>
+                              <footer class="blockquote-footer">Dave Ramsey</footer>
+                          </blockquote>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- Carousel slide-->
+              <div class="carousel-item">
+                  <div class="media"><img class="rounded-circle img-thumbnail" src="https://res.cloudinary.com/mhmd/image/upload/v1579676165/avatar-2_gibm2s.jpg" alt="" width="75">
+                      <div class="media-body ml-3">
+                          <blockquote class="blockquote border-0 p-0">
+                              <p class="font-italic lead"> <i class="fa fa-quote-left mr-3 text-success"></i>
+                                Wide diversification is only required when investors do not understand what they are doing.
+                              </p>
+                              <footer class="blockquote-footer">Warren Buffet</footer>
+                          </blockquote>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+
+          <!-- Bootstrap controls [dots]-->
+          <a class="carousel-control-prev width-auto" href="#carouselExampleIndicators" role="button" data-slide="prev">
+              <i class="fa fa-angle-left text-dark text-lg"></i>
+              <span class="sr-only">Previous</span>
+          </a>
+          <a class="carousel-control-next width-auto" href="#carouselExampleIndicators" role="button" data-slide="next">
+              <i class="fa fa-angle-right text-dark text-lg"></i>
+              <span class="sr-only">Next</span>
+          </a>
       </div>
-      <div class="col-md-8">
-        <div class="chart">
-          <canvas baseChart *ngIf="pieChartData"
+
+      </div>
+      <div class="col-md-7">
+        <div class="chart" style="display: block;">
+          <canvas baseChart
             [data]="pieChartData"
             [labels]="pieChartLabels"
             [chartType]="pieChartType"
             [options]="pieChartOptions"
-            [plugins]="pieChartPlugins"
             [colors]="pieChartColors"
-            [legend]="pieChartLegend" style="width: 300px; height: 250px;">
+            [legend]="pieChartLegend">
           </canvas>
         </div>
       </div>
@@ -58,4 +126,6 @@
     </div>
     <!-- END ROW 2 -->
   </div>
+  <br/>
+  <br/>
 </div>

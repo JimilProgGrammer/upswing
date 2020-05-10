@@ -1,0 +1,42 @@
+<app-navbar>
+
+</app-navbar>
+
+<div class="container-fluid" style="background:#5f38e2; background:linear-gradient(to right,#5f38e2,#5f38e2); height:100%; overflow-y: hidden;">
+  <br/>
+  <div class="card shadow p-3 mb-5 bg-white rounded" style="margin-top: auto;">
+    
+    <!-- ROW 1: Title Row -->
+    <div class="row">
+      <div class="col-md-12 col-sm-12">
+        <h2 style="text-align: center;">Current Leaderboard</h2>
+      </div>
+    </div>
+
+    <!-- ROW 2: Table -->
+    <div class="row">
+      <div class="col-md-12 col-sm-12">
+        <table class="table table-hover">
+          <thead style="background-color: #5f38e2; color: white;">
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Name</th>
+              <th scope="col">Username</th>
+              <th scope="col">Portfolio Gains</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let standing_info of current_standings; let i = index">
+              <th scope="row">{{i+1}}</th>
+              <td>{{standing_info['name']}}</td>
+              <td>{{standing_info['username']}}</td>
+              <td>{{standing_info['portfolio_gain']}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <br/>
+  <br/>
+</div>

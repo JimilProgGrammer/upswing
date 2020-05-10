@@ -1,0 +1,16 @@
+<div class="row">
+  <div class="container-fluid">
+    <div class="chart" style="display: block;">
+      <canvas baseChart width="400" height="400"
+                [datasets]="lineChartData" *ngIf="loaded"
+                [labels]="lineChartLabels"
+                [options]="lineChartOptions"
+                [colors]="lineChartColors"
+                [legend]="lineChartLegend"
+                [chartType]="lineChartType"
+                (chartHover)="chartHovered($event)"
+                (chartClick)="chartClicked($event)">
+    </canvas>
+    </div>
+  </div>
+</div>

@@ -71,6 +71,8 @@
     </div>
     <!-- END ROW 3 -->
   </div>
+  <br/>
+  <br/>
 </div>
 
 <button #openModalButton class="btn btn-primary openModalButton" id="openModalButton" [hidden]="true" data-toggle="modal" data-target="#stockModal">
@@ -93,7 +95,9 @@
           </div>
           <div class="col-md-8 col-xs-12">
             <div class="chart">
+              <app-one-year-chart [name]="selectedStock">
                 
+              </app-one-year-chart>
             </div>
           </div>
         </div>

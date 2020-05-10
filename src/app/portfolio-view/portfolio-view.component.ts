@@ -2,8 +2,6 @@ import { ApiCallerService } from './../services/api-caller.service';
 import { Component, OnInit } from '@angular/core';
 
 import { ChartType, ChartOptions } from 'chart.js';
-import { Label } from 'ng2-charts';
-import * as pluginDataLabels from 'chartjs-plugin-datalabels';
 
 @Component({
   selector: 'app-portfolio-view',
@@ -35,11 +33,11 @@ export class PortfolioViewComponent implements OnInit {
       },
     }
   };
-  public pieChartLabels: Label[] = [];
   public pieChartData: number[] = [];
+  public pieChartLabels: Array<string> = [];
   public pieChartType: ChartType = 'pie';
   public pieChartLegend = true;
-  public pieChartPlugins = [pluginDataLabels];
+  public pieChartPlugins = [];
   public pieChartColors = [
     {
       backgroundColor: ['rgba(255,0,0,0.3)', 'rgba(0,255,0,0.3)', 'rgba(0,0,255,0.3)', 'rgba(63, 191, 191, 0.5)',

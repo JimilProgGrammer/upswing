@@ -13,6 +13,8 @@ import { SignupComponent } from './signup/signup.component';
 import { StockPickerComponent } from './stock-picker/stock-picker.component';
 import { NavbarComponent } from './navbar/navbar.component';
 import { PortfolioViewComponent } from './portfolio-view/portfolio-view.component';
+import { LeaderboardViewComponent } from './leaderboard-view/leaderboard-view.component';
+import { OneYearChartComponent } from './one-year-chart/one-year-chart.component';
 
 @NgModule({
   declarations: [
@@ -22,7 +24,9 @@ import { PortfolioViewComponent } from './portfolio-view/portfolio-view.componen
     SignupComponent,
     StockPickerComponent,
     NavbarComponent,
-    PortfolioViewComponent
+    PortfolioViewComponent,
+    LeaderboardViewComponent,
+    OneYearChartComponent
   ],
   imports: [
     BrowserModule,
