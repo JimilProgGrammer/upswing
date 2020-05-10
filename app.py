@@ -11,6 +11,7 @@ import os
 import datetime
 from flask_apscheduler import APScheduler
 from flask import Flask, jsonify, request, Response
+from bson import json_util
 
 '''from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
@@ -106,16 +107,6 @@ def SendOTPOverEmail(email):
 # [------------------------------------END SEND EMAIL-------------------------------------------------]
 
 # [---------------------------------------START LOGIN PAGE--------------------------------------------]
-class User(object):
-  def __init__(self, id, username, password):
-    self.id = id
-    self.username = username
-    self.password = password
-
-  def __str__(self):
-    return "User(id='%s')" % self.username
-
-
 @app.route("/auth", methods=["Post"])
 def authenticate():
   username = request.args.get("username")
@@ -134,8 +125,6 @@ def authenticate():
       return create_json({"data": ret, "error": None})
     else:
       return (jsonify({'data': None, 'error': "Username Doesn't Match"}))
-
-
 # [-----------------------------------------END LOGIN PAGE-----------------------------------------]
 
 # send CORS headers
@@ -194,50 +183,6 @@ def check(username, otp):
     return (jsonify({'data': None, 'error': 'Otp incorrect'}))
 
 
-@app.route('/welcome')
-# @jwt_required
-def getdetails():
-  un = request.args.get("username")
-  ob = repo.OhlcRepo()
-  res = ob.find_record_with_limit(collection_name="users", query={"username": str(un)}, limit=1)[0]
-
-  print(res)
-  if 'academics' not in res.keys():
-    return (jsonify({'data': {'profile_incomplete': True}, 'error': None}))
-  else:
-    return (jsonify({'data': {'profile_incomplete': False}, 'error': None}))
-
-
-@app.route('/complete_profile', methods=['POST'])
-def add_records():
-  data = request.get_json()
-  print(data)
-  print(type(data))
-  ob = repo.OhlcRepo()
-  ob.insert_record(collection_name="users", query={'username': data['username']}, insert_doc={
-    '$set': {'academics': data['academics'], 'courses': data['courses'], 'interests': data['interests']}})
-  return (jsonify({'data': 'success'}))
-
-
-@app.route('/search')
-def retres():
-  query = request.args.get("keyword")
-  un = request.args.get("username")
-  ob = repo.OhlcRepo()
-  res = ob.find_record_with_projection_limit(collection_name="users", query={"usrname": un})
-
-
-@app.route('/course_description')
-def ret_course():
-  title = request.args.get("title")
-  source = request.args.get("source")
-  ob = repo.OhlcRepo()
-  res = ob.find_record_with_limit(collection_name="courses", query={"course_title": title, "course_source": source},
-                                  limit=1)
-  res[0]['_id'] = str(res[0]['_id'])
-  return (jsonify({'data': res[0], 'error': None}))
-
-
 def create_json(data):
   """Utility method that creates a json response from the data returned by the service method.
    :param data:
@@ -249,186 +194,6 @@ def create_json(data):
   js = json.dumps(base_response_dto)
   resp = Response(js, status=200, mimetype='application/json')
   return resp
-
-
-@app.route('/first_time_quiz', methods=['POST'])
-def first_time_quiz():
-  data = request.get_json()
-  ob = repo.OhlcRepo()
-  records = list(ob.find_record_with_limit('quiz', {'domain': data['domain']}, 9))
-  results = {'beginner': [], 'intermediate': [], 'advanced': []}
-  for record in records:
-    record['_id'] = str(record['_id'])
-    if record['level'] == 1:
-      results['beginner'].append(record)
-    if record['level'] == 2:
-      results['intermediate'].append(record)
-    if record['level'] == 3:
-      results['advanced'].append(record)
-  return create_json(results)
-
-
-@app.route('/quiz_result', methods=['POST'])
-def store_quiz_result():
-  data = request.get_json()
-  username = data['username']
-  quiz_score = int(data['score'])
-  quiz_domain = data['domain']
-  if quiz_score < 6:
-    level = 1
-  elif quiz_score < 9:
-    level = 2
-  elif quiz_score == 9:
-    level = 3
-  ob = repo.OhlcRepo()
-  ob.insert_record('user_scores', {'username': username},
-                   {'$set': {'score': int(quiz_score), 'level': level, 'domain': quiz_domain}})
-  return create_json('Run recommendation engine')
-
-
-def quiz(domain):
-  ob = repo.OhlcRepo()
-  records = list(ob.find_record_with_limit('quiz', {'domain': domain}, 9))
-  results = {'beginner': [], 'intermediate': [], 'advanced': []}
-  for record in records:
-    record['_id'] = str(record['_id'])
-    if record['level'] == 1:
-      results['beginner'].append(record)
-    if record['level'] == 2:
-      results['intermediate'].append(record)
-    if record['level'] == 3:
-      results['advanced'].append(record)
-  results['type'] = 'quiz'
-  return create_json(results)
-
-
-@app.route('/courses', methods=['GET'])
-def find_top_courses():
-  # username = request.args.get('username')
-  domain = request.args.get('domain')
-  ob = repo.OhlcRepo()
-  final_list = []
-  for course_source in ['udemy', 'coursera', 'edx', 'youtube']:
-    records = list(ob.find_record_with_limit('courses', {'search_term': domain, 'course_source': course_source}, 5))
-    for x in records:
-      x['_id'] = str(x['_id'])
-      final_list.append(x)
-  random.shuffle(final_list)
-  return create_json(final_list)
-
-
-@app.route('/search_by_domain', methods=['GET'])
-def search_by_domain():
-  username = request.args.get('username')
-  domain = request.args.get('domain')
-  ob = repo.OhlcRepo()
-  records = list(ob.find_record_with_limit('users', {'username': username}, 1))
-  print(records)
-  if 'searched_keywords' in records[0]:
-    searched_keywords = records[0]['searched_keywords']
-  else:
-    searched_keywords = []
-  if domain not in searched_keywords:
-    searched_keywords.append(domain)
-    ob.update_query('users', {'username': username}, {'searched_keywords': searched_keywords})
-    return quiz(domain)
-  else:
-    return create_json('Run recommendation engine')
-
-
-@scheduler.task('cron', hour=4)
-def content_fetch():
-  print('Crawls for new courses every day')
-  '''
-    # Udemy
-    udemy.Udemy_API.main()
-    # Coursera
-    coursera.coursera_main.main()
-    # EdX
-    edx.edx_scrapper.main()
-    # Youtube
-    youtube.youtubeapi.main()'''
-
-
-@app.route('/get_profile/<username>', methods=['GET'])
-def get_user_profile(username):
-  ob = repo.OhlcRepo()
-  record = list(ob.find_record_with_projection_limit(collection_name='users'
-                                                     , query={'username': str(username)}
-                                                     , projection={"_id": 0}
-                                                     , limit=1))
-  if not record:
-    return jsonify({"data": None, "error": "Username does not exist"})
-  record = record[0]
-  if record['username'] == username:
-    return (jsonify({'data': {"user": record}, 'error': None}))
-  else:
-    return (jsonify({'data': None, 'error': 'Username does not exists'}))
-
-
-@app.route('/update_profile/<username>', methods=['POST'])
-def update_user_profile(username):
-  ob = repo.OhlcRepo()
-  res = ob.find_record_with_limit(collection_name="users", query={"username": str(username)}, limit=1)[0]
-  if res['username'] == username:
-    update_doc = request.get_json(force=True)
-    if res['academics'] != update_doc['academics'] or res['courses'] != update_doc['courses']:
-      update_doc['balance'] += (len(update_doc['academics']) - len(res['academics'])) * 10
-      update_doc['balance'] += (len(update_doc['courses']) - len(res['courses'])) * 10
-    ob.insert_record(collection_name="users", query={"username": username}
-                     , insert_doc={"$set":
-        {
-          "academics": update_doc["academics"],
-          "courses": update_doc["courses"],
-          "interests": update_doc["interests"],
-          "city": update_doc["city"],
-          "state": update_doc["state"],
-          "country": update_doc["country"],
-          "name": update_doc["name"],
-          "password": update_doc["password"],
-          "phone": update_doc["phone"],
-          "balance": update_doc["balance"]
-        }})
-    return (jsonify({'data': 'Your profile has been updated successfully!', 'error': None}))
-  else:
-    return (jsonify({'data': None, 'error': 'There was an error in updating your profile. Please try again.'}))
-
-
-@app.route("/get_quiz_questions/<domain>", methods=["GET"])
-def get_quiz_questions(domain):
-  ob = repo.OhlcRepo()
-  questions = ob.find_record_with_projection('quiz', {"domain": domain}, {"_id": 0})
-  if not questions:
-    return create_json({"data": None, "error": "There was an error in fetching the questions. Please try again later."})
-  else:
-    return create_json({"data": questions, "error": None})
-
-
-@app.route("/evaluate_quiz/<username>/<domain>", methods=["POST"])
-def evaluate_quiz(username, domain):
-  ob = repo.OhlcRepo()
-  res = ob.find_record_with_limit(collection_name="users", query={"username": str(username)}, limit=1)[0]
-  if username == res['username']:
-    attempted_quiz = request.get_json(force=True)
-    score = 0
-    for question in attempted_quiz:
-      evaluation = ob.find_record_with_projection('quiz', {"domain": domain, "question": question}, {"_id": 0})[0]
-      if evaluation and evaluation['correct_answer'] == attempted_quiz[question]:
-        score = score + 1
-    expertise = ""
-    if score <= 3:
-      expertise = "Beginner"
-    elif score > 3 and score <= 6:
-      expertise = "Intermediate"
-    elif score > 6:
-      expertise = "Advanced"
-
-    update_doc = {"expertise": {"domain": domain, "details": {"score": score, "expertise": expertise}}}
-    ob.insert_record(collection_name="users", query={"username": username}, insert_doc={"$set": update_doc})
-
-    return create_json({"data": {"expertise": expertise, "score": score}, "error": None})
-  else:
-    return create_json({"data": None, "error": "Specified username is invalid; it does not exist."})
 
 
 @app.route("/get_portfolio/<username>", methods=["GET"])
@@ -544,6 +309,7 @@ def buy_stocks():
   else:
     return create_json({"data": None, "error": "Username passed is invalid."})
 
+
 @app.route("/sell_stocks", methods=["POST"])
 def sell_stocks():
   form = {}
@@ -588,6 +354,7 @@ def sell_stocks():
   else:
     return create_json({"data": None, "error": "Username passed is invalid."})
 
+
 @app.route("/get_current_standings", methods=["GET"])
 def get_current_standings():
   try:
@@ -623,6 +390,21 @@ def get_current_standings():
   except Exception as e:
     print(e)
     return create_json({"Error": e})
+
+
+@app.route("/get_chart_data/<symbol>", methods=["GET"])
+def get_stock_data_for_chart(symbol):
+  try:
+    ob = repo.OhlcRepo()
+    stock_docs = ob.find_record_with_projection_limit(collection_name=symbol, query={}, projection={"_id": 0, "close": 1, "timestamp": 1}, limit=252)
+    stock_docs.reverse()
+    closing = [stock['close'] for stock in stock_docs]
+    dates = [stock['timestamp'].strftime('%d/%m/%Y') for stock in stock_docs]
+    return create_json({'data': {'close': closing, 'date': dates}, "error": None})
+  except Exception as e:
+    print(e)
+    return create_json({"data": None, "error": e})
+
 
 @app.route("/initial_data_load", methods=["GET"])
 def daily_data_load():
