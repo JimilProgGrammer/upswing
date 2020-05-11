@@ -2,79 +2,9 @@ from __future__ import division
 from db_connectivity import *
 import pymongo
 
-class CurrencyRepo(object):
-    """
-    CurrencyRepo is used to perform CRUD operations on currencies master table
-    """
-    db_inst = None
-
-    def __init__(self):
-        mongo = MongoCon()
-        db_cli = mongo.get_connection()
-        self.db_inst = db_cli.currencies
-
-    def init_db(self):
-        mongo = MongoCon()
-        db_cli = mongo.get_connection()
-        self.db_inst = db_cli.currencies
-        return
-
-    def find_record(self, query):
-        return self.db_inst.find(query)
-
-    def find_one_record(self, query):
-        return self.db_inst.find_one(query)
-
-    def find_and_update(self, query, update):
-        self.db_inst.update_one(query, update)
-
-    def find_record_with_projection(self, query, projection):
-        return self.db_inst.find(query, projection)
-
-    def insert_record(self, query, insert_doc):
-        return self.db_inst.update_one(query, insert_doc, upsert=True)
-
-'''
-The StocksRepo performs all database operations on stocks collection.
-'''
-
-
-class StocksRepo(object):
-
-    db_inst = None
-
-    def __init__(self):
-        mongo = MongoCon()
-        db_cli = mongo.get_connection()
-        self.db_inst = db_cli.stocks
-
-    def init_db(self):
-        mongo = MongoCon()
-        db_cli = mongo.get_connection()
-        self.db_inst = db_cli.stocks
-        return
-
-    def find_record(self, query):
-        return self.db_inst.find(query)
-
-    def find_one_record(self, query):
-        return self.db_inst.find_one(query)
-
-    def find_and_update(self, query, update):
-        self.db_inst.update_one(query, update)
-
-    def find_record_with_projection(self, query, projection):
-        return self.db_inst.find(query, projection)
-
-    def insert_record(self, query, insert_doc):
-        return self.db_inst.update_one(query, insert_doc, upsert=True)
-
-
 '''
 The OhlcRepo performs all database operations on a given stock's collection.
 '''
-
-
 class OhlcRepo(object):
 
     db_inst = None
@@ -147,30 +77,3 @@ class OhlcRepo(object):
     def update_query(self, collection_name, query_doc, insert_doc):
         self.db_inst = self.db_cli[collection_name]
         self.db_inst.update_one(query_doc, {'$set': insert_doc}, upsert=True)
-
-
-'''
-The Config performs all database operations on config collection.
-'''
-
-
-class Config(object):
-
-    db_inst = None
-
-    def __init__(self):
-        mongo = MongoCon()
-        db_cli = mongo.get_connection()
-        self.db_inst = db_cli.config
-
-    def init_db(self):
-        mongo = MongoCon()
-        db_cli = mongo.get_connection()
-        self.db_inst = db_cli.config
-        return
-
-    def find_record_with_projection(self, query, projection):
-        return self.db_inst.find(query, projection)
-
-    def update_record(self, query, insert_doc):
-        return self.db_inst.update_one(query, insert_doc, upsert=False)

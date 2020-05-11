@@ -12,28 +12,14 @@ import datetime
 from flask_apscheduler import APScheduler
 from flask import Flask, jsonify, request, Response
 from bson import json_util
-
-'''from flask_jwt_extended import (
-    JWTManager, jwt_required, create_access_token,
-    get_jwt_identity,
-    create_refresh_token,
-    jwt_refresh_token_required
-)'''
 import numpy as np
-# import skfuzzy as fuzz
-# from skfuzzy import control as ctrl
 import json
 import repo
 import random
 import operator
-
 # [---------------------------------------END IMPORTING LIBRARIES-------------------------------------]
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = u"C:/Users/yashs/Documents/arjun/flask/ArjunBot.json"
-
-
 class Config(object):
   SCHEDULER_API_ENABLED = True
-
 
 app = Flask(__name__)
 app.debug = True
@@ -43,11 +29,15 @@ scheduler = APScheduler()
 scheduler.init_app(app)
 scheduler.start()
 
-
-# jwt = JWTManager(app)
-
+"""
+:author: Sujoy
+"""
 # [------------------------------------START SEND EMAIL-----------------------------------------------]
 def send_email(user, pwd, recipient, subject, body):
+  """
+  Utility function that send OTP in email from 'user' Email ID
+  to 'recipient' Email ID.
+  """
   FROM = user
   TO = recipient if isinstance(recipient, list) else [recipient]
   SUBJECT = subject
@@ -73,6 +63,10 @@ def send_email(user, pwd, recipient, subject, body):
 
 
 def SendOTPOverEmail(email):
+  """
+  Utility method that generates random OTP, forms email body
+  and uses send_email() to send email over TLS.
+  """
   try:
     otp = str(r.randint(10000, 99999))
     # manandoshi1607@gmail.com
@@ -102,13 +96,14 @@ def SendOTPOverEmail(email):
   except Exception as e:
     print(e)
     return ""
-
-
 # [------------------------------------END SEND EMAIL-------------------------------------------------]
 
 # [---------------------------------------START LOGIN PAGE--------------------------------------------]
 @app.route("/auth", methods=["Post"])
 def authenticate():
+  """
+  Login API to verify if userID and password were correct.
+  """
   username = request.args.get("username")
   password = request.args.get("password")
 
@@ -130,6 +125,10 @@ def authenticate():
 # send CORS headers
 @app.after_request
 def after_request(response):
+  """
+  Executed before sending output of each API; helps
+  in preventing CORS error.
+  """
   response.headers.add('Access-Control-Allow-Origin', '*')
   if request.method == 'OPTIONS':
     response.headers['Access-Control-Allow-Methods'] = 'DELETE, GET, POST, PUT'
@@ -141,6 +140,10 @@ def after_request(response):
 
 @app.route('/signup', methods=['Post'])
 def sign_up():
+  """
+  Signs up user by checking whether username is already existing or not
+  and then sending OTP to user, if signup is successful.
+  """
   form = {}
   form['name'] = request.args.get("name")
   form['email_id'] = request.args.get("email_id")
@@ -171,6 +174,10 @@ def sign_up():
 
 @app.route('/verify/<username>/<otp>', methods=['Post'])
 def check(username, otp):
+  """
+  API to verify whether user entered the OTP
+  correctly or not.
+  """
   # det=request.args
   ob = repo.OhlcRepo()
   res = ob.find_record_with_limit(collection_name="users", query={"email_id": str(username)}, limit=1)[0]
@@ -184,10 +191,11 @@ def check(username, otp):
 
 
 def create_json(data):
-  """Utility method that creates a json response from the data returned by the service method.
+  """
+  Utility method that creates a json response from the data returned by the service method.
    :param data:
    :return:
-   """
+  """
   base_response_dto = {
     'data': data,
   }
@@ -196,8 +204,174 @@ def create_json(data):
   return resp
 
 
+@app.route("/buy_stocks", methods=["POST"])
+def buy_stocks():
+  """
+  Utility method that is called when user wants to buy certain
+  quantity of a stock.
+  1. Sees stock_portfolio collection to identify the quantity of
+     that stock that the user has.
+  2. Updates portfolio collection with a new BUY trade.
+  3. Updates balance in user collection.
+  """
+  form = {}
+  form['username'] = request.args.get("username")
+  form['stock_name'] = request.args.get("stock_name")
+  form['quantity'] = request.args.get("quantity")
+  form['price'] = request.args.get("price")
+  print(form)
+  ob = repo.OhlcRepo()
+  user = ob.find_record_with_limit(collection_name="users", query={"email_id": str(form['username'])}, limit=1)[0]
+  if user:
+    if user['balance'] > float(form['quantity']) * float(form['price']):
+      stock_portfolio = ob.find_record_with_projection_limit(collection_name="portfolio"
+                                                             , query={"email_id": form['username'],"stock_name": form['stock_name']}
+                                                             , projection={"_id": 0, "quantity": 1}, limit=1)
+
+      quantity = int(form['quantity'])
+      if len(stock_portfolio) > 0:
+        quantity = quantity + stock_portfolio[0]['quantity']
+
+      timestamp = datetime.datetime.now().strftime("%d/%m/%Y")
+      ob.insert_new_record(collection_name="portfolio", insert_doc={
+        "email_id": form['username'],
+        "stock_name": form['stock_name'],
+        "quantity": quantity,
+        "price": float(form['price']),
+        "is_live": True,
+        "timestamp": timestamp,
+        "trade_type": "BUY"
+      })
+      ob.insert_record(collection_name="users", query={"email_id": str(form['username'])}, insert_doc={
+        "$set": {
+          "balance": user['balance'] - (float(form['quantity']) * float(form['price']))
+        }
+      })
+      return create_json({"data": "BUY transaction executed successfully.", "error": None})
+    else:
+      return create_json({"data": None, "error": "Insufficient Balance. Cannot buy any more stocks."})
+  else:
+    return create_json({"data": None, "error": "Username passed is invalid."})
+
+
+@app.route("/sell_stocks", methods=["POST"])
+def sell_stocks():
+  """
+  API that is called when user wants to sell a certain quantity
+  of a particular stock.
+  1. Sees stock_portfolio collection to identify the quantity of
+     that stock that the user has.
+  2. Updates portfolio collection with a new SELL trade.
+  3. Updates balance in user collection.
+  """
+  form = {}
+  form['username'] = request.args.get("username")
+  form['stock_name'] = request.args.get("stock_name")
+  form['quantity'] = request.args.get("quantity")
+  form['price'] = request.args.get("price")
+  print(form)
+  ob = repo.OhlcRepo()
+  user = ob.find_record_with_limit(collection_name="users", query={"email_id": str(form['username'])}, limit=1)[0]
+  if user:
+    stock_portfolio = ob.find_record_with_projection_limit(collection_name="portfolio"
+                                                     , query={"email_id": form['username'], "stock_name": form['stock_name']}
+                                                     , projection={"_id":0, "quantity": 1}, limit=1)
+
+    if len(stock_portfolio) == 0:
+      return create_json({"data":None, "error": "You cannot SELL a stock that you don't own."})
+
+    stock_portfolio = stock_portfolio[0]
+    if form['quantity'] <= stock_portfolio['quantity']:
+      is_live = True
+      if int(form['quantity']) == stock_portfolio['quantity']:
+        is_live = False
+      timestamp = datetime.datetime.now().strftime("%d/%m/%Y")
+      ob.insert_new_record(collection_name="portfolio", insert_doc={
+        "email_id": form['username'],
+        "stock_name": form['stock_name'],
+        "quantity": int(stock_portfolio['quantity']) - int(form['quantity']),
+        "price": float(form['price']),
+        "is_live": is_live,
+        "timestamp": timestamp,
+        "trade_type": "SELL"
+      })
+      ob.insert_record(collection_name="users", query={"email_id": str(form['username'])}, insert_doc={
+        "$set": {
+          "balance": user['balance'] + (float(form['quantity']) * float(form['price']))
+        }
+      })
+      return create_json({"data": "SELL transaction executed successfully.", "error": None})
+    else:
+      return create_json({"data":None, "error": "You cannot SELL more equities than you own."})
+  else:
+    return create_json({"data": None, "error": "Username passed is invalid."})
+
+
+@app.route("/initial_data_load", methods=["GET"])
+def daily_data_load():
+  """
+  First API that is to be executed after setup in production.
+  Loads all data from 2016 for all the stocks offered in the game.
+  """
+  try:
+    ob = repo.OhlcRepo()
+    stocks = ob.find_record_with_projection(collection_name="stocks", query={}, projection={"_id": 0, "stock_name": 1})
+
+    start_date = datetime.date.today() - datetime.timedelta(days=1260)
+    start_date = start_date.strftime("%Y-%m-%d")
+
+    for doc in stocks:
+      symbol = doc['stock_name']
+      print("INSERTING: " + symbol)
+      data = yahoo_finance(symbol, start_date)
+      data = data.to_dict("records")
+      ob.insert_many_records(collection_name=symbol, insert_doc=data)
+      print("DONE INSERTING: " + symbol)
+    return create_json({"data": "Success"})
+  except Exception as e:
+    print(e)
+    return create_json({"Error": e})
+
+
+@app.route("/daily_data_load")
+def daily_data_load_endpoint():
+  """
+  Fail-safe for scheduler; triggered when scheduler fails to load
+  new OHLC data at the end of day.
+  """
+  try:
+    ob = repo.OhlcRepo()
+    stocks = ob.find_record_with_projection(collection_name="stocks", query={}, projection={"_id": 0, "stock_name": 1})
+
+    start_date = datetime.date.today() - datetime.timedelta(days=7)
+    start_date = start_date.strftime("%Y-%m-%d")
+
+    for doc in stocks:
+      symbol = doc['stock_name']
+      print("INSERTING: " + symbol)
+      data = yahoo_finance(symbol, start_date)
+      data = data.to_dict("records")
+      for record in data:
+        query_doc = {"timestamp": record["timestamp"]}
+        insert_doc = record
+        ob.update_query(collection_name=symbol, query_doc=query_doc, insert_doc=insert_doc)
+      print(record['timestamp'])
+      print("DONE INSERTING: " + symbol)
+    return create_json({"data": "Success"})
+  except Exception as e:
+    print(e)
+    return create_json({"Error": e})
+
+"""
+:author: Manan
+"""
 @app.route("/get_portfolio/<username>", methods=["GET"])
 def get_user_portfolio(username):
+  """
+  API that is used to return data for the user's welcome screen;
+  returns user's current holdings, his portfolio's net gain and his
+  current balance.
+  """
   ob = repo.OhlcRepo()
   res = ob.find_record_with_limit(collection_name="users", query={"email_id": str(username)}, limit=1)[0]
   json_response = {'current_holdings': [], 'balance': 0, 'portfolio_net_gain': 0}
@@ -250,6 +424,11 @@ def get_user_portfolio(username):
 
 @app.route("/stock_picker/<username>", methods=["GET"])
 def stock_picker(username):
+  """
+  API that returns all stocks and their description, along with
+  their latest closing prices, for the stock picker screen.
+  Used to give buy and sell options to the user.
+  """
   ob = repo.OhlcRepo()
   user = ob.find_record_with_limit(collection_name="users", query={"email_id": str(username)}, limit=1)
   if user:
@@ -268,95 +447,12 @@ def stock_picker(username):
     return create_json({"data": None, "error": "Username passed is invalid."})
 
 
-@app.route("/buy_stocks", methods=["POST"])
-def buy_stocks():
-  form = {}
-  form['username'] = request.args.get("username")
-  form['stock_name'] = request.args.get("stock_name")
-  form['quantity'] = request.args.get("quantity")
-  form['price'] = request.args.get("price")
-  print(form)
-  ob = repo.OhlcRepo()
-  user = ob.find_record_with_limit(collection_name="users", query={"email_id": str(form['username'])}, limit=1)[0]
-  if user:
-    if user['balance'] > float(form['quantity']) * float(form['price']):
-      stock_portfolio = ob.find_record_with_projection_limit(collection_name="portfolio"
-                                                             , query={"email_id": form['username'],"stock_name": form['stock_name']}
-                                                             , projection={"_id": 0, "quantity": 1}, limit=1)
-
-      quantity = int(form['quantity'])
-      if len(stock_portfolio) > 0:
-        quantity = quantity + stock_portfolio[0]['quantity']
-
-      timestamp = datetime.datetime.now().strftime("%d/%m/%Y")
-      ob.insert_new_record(collection_name="portfolio", insert_doc={
-        "email_id": form['username'],
-        "stock_name": form['stock_name'],
-        "quantity": quantity,
-        "price": float(form['price']),
-        "is_live": True,
-        "timestamp": timestamp,
-        "trade_type": "BUY"
-      })
-      ob.insert_record(collection_name="users", query={"email_id": str(form['username'])}, insert_doc={
-        "$set": {
-          "balance": user['balance'] - (float(form['quantity']) * float(form['price']))
-        }
-      })
-      return create_json({"data": "BUY transaction executed successfully.", "error": None})
-    else:
-      return create_json({"data": None, "error": "Insufficient Balance. Cannot buy any more stocks."})
-  else:
-    return create_json({"data": None, "error": "Username passed is invalid."})
-
-
-@app.route("/sell_stocks", methods=["POST"])
-def sell_stocks():
-  form = {}
-  form['username'] = request.args.get("username")
-  form['stock_name'] = request.args.get("stock_name")
-  form['quantity'] = request.args.get("quantity")
-  form['price'] = request.args.get("price")
-  print(form)
-  ob = repo.OhlcRepo()
-  user = ob.find_record_with_limit(collection_name="users", query={"email_id": str(form['username'])}, limit=1)[0]
-  if user:
-    stock_portfolio = ob.find_record_with_projection_limit(collection_name="portfolio"
-                                                     , query={"email_id": form['username'], "stock_name": form['stock_name']}
-                                                     , projection={"_id":0, "quantity": 1}, limit=1)
-
-    if len(stock_portfolio) == 0:
-      return create_json({"data":None, "error": "You cannot SELL a stock that you don't own."})
-
-    stock_portfolio = stock_portfolio[0]
-    if form['quantity'] <= stock_portfolio['quantity']:
-      is_live = True
-      if int(form['quantity']) == stock_portfolio['quantity']:
-        is_live = False
-      timestamp = datetime.datetime.now().strftime("%d/%m/%Y")
-      ob.insert_new_record(collection_name="portfolio", insert_doc={
-        "email_id": form['username'],
-        "stock_name": form['stock_name'],
-        "quantity": int(stock_portfolio['quantity']) - int(form['quantity']),
-        "price": float(form['price']),
-        "is_live": is_live,
-        "timestamp": timestamp,
-        "trade_type": "SELL"
-      })
-      ob.insert_record(collection_name="users", query={"email_id": str(form['username'])}, insert_doc={
-        "$set": {
-          "balance": user['balance'] + (float(form['quantity']) * float(form['price']))
-        }
-      })
-      return create_json({"data": "SELL transaction executed successfully.", "error": None})
-    else:
-      return create_json({"data":None, "error": "You cannot SELL more equities than you own."})
-  else:
-    return create_json({"data": None, "error": "Username passed is invalid."})
-
-
 @app.route("/get_current_standings", methods=["GET"])
 def get_current_standings():
+  """
+  Returns data for the leaderboard screen; calculates portfolio net gain for
+  all users and sorts in descending order, thus generating the leaderboard.
+  """
   try:
     ob = repo.OhlcRepo()
     users = ob.find_record_with_projection(collection_name="users", query={}, projection={"_id": 0})
@@ -394,6 +490,10 @@ def get_current_standings():
 
 @app.route("/get_chart_data/<symbol>", methods=["GET"])
 def get_stock_data_for_chart(symbol):
+  """
+  Returns the latest 1-year (252 days) datapoints i.e. timestamps
+  and closing price for plotting the graph.
+  """
   try:
     ob = repo.OhlcRepo()
     stock_docs = ob.find_record_with_projection_limit(collection_name=symbol, query={}, projection={"_id": 0, "close": 1, "timestamp": 1}, limit=252)
@@ -406,56 +506,12 @@ def get_stock_data_for_chart(symbol):
     return create_json({"data": None, "error": e})
 
 
-@app.route("/initial_data_load", methods=["GET"])
-def daily_data_load():
-  try:
-    ob = repo.OhlcRepo()
-    stocks = ob.find_record_with_projection(collection_name="stocks", query={}, projection={"_id": 0, "stock_name": 1})
-
-    start_date = datetime.date.today() - datetime.timedelta(days=1260)
-    start_date = start_date.strftime("%Y-%m-%d")
-
-    for doc in stocks:
-      symbol = doc['stock_name']
-      print("INSERTING: " + symbol)
-      data = yahoo_finance(symbol, start_date)
-      data = data.to_dict("records")
-      ob.insert_many_records(collection_name=symbol, insert_doc=data)
-      print("DONE INSERTING: " + symbol)
-    return create_json({"data": "Success"})
-  except Exception as e:
-    print(e)
-    return create_json({"Error": e})
-
-
-@app.route("/daily_data_load")
-def daily_data_load_endpoint():
-  try:
-    ob = repo.OhlcRepo()
-    stocks = ob.find_record_with_projection(collection_name="stocks", query={}, projection={"_id": 0, "stock_name": 1})
-
-    start_date = datetime.date.today() - datetime.timedelta(days=7)
-    start_date = start_date.strftime("%Y-%m-%d")
-
-    for doc in stocks:
-      symbol = doc['stock_name']
-      print("INSERTING: " + symbol)
-      data = yahoo_finance(symbol, start_date)
-      data = data.to_dict("records")
-      for record in data:
-        query_doc = {"timestamp": record["timestamp"]}
-        insert_doc = record
-        ob.update_query(collection_name=symbol, query_doc=query_doc, insert_doc=insert_doc)
-      print(record['timestamp'])
-      print("DONE INSERTING: " + symbol)
-    return create_json({"data": "Success"})
-  except Exception as e:
-    print(e)
-    return create_json({"Error": e})
-
-
 @scheduler.task('cron', hour=8)
 def daily_data_load():
+  """
+  Scheduler running every 8 hours to update new
+  EOD OHLC data.
+  """
   try:
     ob = repo.OhlcRepo()
     stocks = ob.find_record_with_projection(collection_name="stocks", query={}, projection={"_id": 0, "stock_name": 1})
